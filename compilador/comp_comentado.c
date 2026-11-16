@@ -3022,3 +3022,810 @@ void cargarPopEAX (byte memoria[], int *topememoria){
     else
         CargarByte(memoria,topememoria,0x58);
 }
+
+/*Introducción
+En este curso desarrollaremos un compilador para el lenguaje de 
+programación PL/0, presentando una introducción general de la estructura 
+y operación de los compiladores. 
+1. Comentarios generales sobre la teoría de compiladores
+El diseño de programas para resolver problemas complejos es mucho más 
+sencillo utilizando lenguajes de alto nivel, ya que se requieren menos 
+conocimientos sobre la estructura interna del computador, aunque es obvio 
+que éste sólo entiende el código de máquina. Por lo tanto, para que un 
+computador pueda ejecutar programas escritos en un lenguaje de alto 
+nivel, éstos deben ser traducidos a código de máquina. A este proceso se 
+lo denomina compilación, y la herramienta que la lleva a cabo se llama 
+compilador. Por ende, los compiladores son fundamentales para la 
+computación, y su importancia se mantendrá en el futuro. 
+La entrada del compilador es el código fuente, es decir, el programa 
+escrito en un lenguaje de alto nivel. El compilador analiza esta entrada 
+y genera a su salida el código objeto. Existen distintas formas de código 
+objeto, siendo una de las diferencias más destacables la que existe entre 
+el código absoluto (el código de máquina con direcciones de memoria 
+absolutas) y el código relocalizable (el código de máquina con 
+desplazamientos de direcciones, y por lo tanto enlazable con otros 
+módulos compilados por separado). 
+p
+pp
+p Ensamblador
+De acuerdo con los diferentes tipos de código y las diversas formas 
+de funcionamiento, podemos distinguir entre los siguientes tipos de 
+sistemas de compilación: 
+: Traduce programas escritos en lenguaje ensamblador a 
+código de máquina. El lenguaje ensamblador se caracteriza por el uso de 
+mnemónicos para representar instrucciones y direcciones de memoria. 
+p
+pp
+p Compilador
+: Traduce programas escritos en un lenguaje de alto nivel a 
+código intermedio o a código de máquina. El código intermedio puede ser, 
+por ejemplo, un lenguaje ensamblador o alguna otra forma de 
+representación intermedia. 
+Construcción de un compilador de PL/0 para Win32: Pág. 2 
+ 
+ 
+ 
+UNIVERSIDAD TECNOLÓGICA NACIONAL    UNIVERSIDAD TECNOLÓGICA NACIONAL    UNIVERSIDAD TECNOLÓGICA NACIONAL    UNIVERSIDAD TECNOLÓGICA NACIONAL                            INSTITUTO NACIONAL SUPERIOR DEL PROFESORADO TÉCNICO    INSTITUTO NACIONAL SUPERIOR DEL PROFESORADO TÉCNICO    INSTITUTO NACIONAL SUPERIOR DEL PROFESORADO TÉCNICO    INSTITUTO NACIONAL SUPERIOR DEL PROFESORADO TÉCNICO    
+    
+ 
+Carrera: INFORMÁTICA APLICADA     Materia: SISTEMAS DE COMPUTACIÓN I     Docente: M. ING. DIEGO CORSI 
+ 
+ 
+ 
+ Construcción de un compilador de PL/0 para Win32: Pág. 3 
+pppp Intérprete: No genera código objeto, sino que analiza y ejecuta 
+directamente cada sentencia del código fuente. Como no se genera código 
+de máquina, en cierta forma los programas escritos para ser interpretados 
+son independientes de la máquina. 
+pppp Preprocesador: Reemplaza macros, incluye archivos o extiende el 
+lenguaje. 
+    En este curso sólo haremos hincapié en los compiladores, y 
+estudiaremos las distintas fases del proceso de compilación, pero no nos 
+detendremos en cuestiones marginales como los sistemas de edición y 
+depuración que forman parte de todo ambiente de compilación moderno. 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+    El análisis léxico es llevado a cabo por el analizador léxico 
+(lexical scanner o simplemente scanner) y consiste en reconocer los 
+componentes léxicos (símbolos del lenguaje) contenidos en el código 
+fuente del programa a compilar, que ingresa como un flujo de caracteres. 
+    El análisis sintáctico tiene como objetivo revisar si los símbolos 
+detectados durante el análisis léxico aparecen en el orden correcto como 
+para constituir un programa válido. El analizador sintáctico se conoce 
+usualmente como parser. 
+    El análisis semántico reconoce si las unidades gramaticales tienen 
+sentido, detectando errores como inconsistencia de tipos u operaciones 
+con objetos no declarados. 
+Código Fuente 
+Análisis Léxico 
+Análisis Sintáctico 
+Análisis Semántico 
+Código Intermedio 
+Generación de Código 
+Código Objeto 
+C 
+O 
+M 
+P 
+I 
+L 
+A 
+D 
+O 
+R 
+ 
+ 
+ 
+UNIVERSIDAD TECNOLÓGICA NACIONAL    UNIVERSIDAD TECNOLÓGICA NACIONAL    UNIVERSIDAD TECNOLÓGICA NACIONAL    UNIVERSIDAD TECNOLÓGICA NACIONAL                            INSTITUTO NACIONAL SUPERIOR DEL PROFESORADO TÉCNICO    INSTITUTO NACIONAL SUPERIOR DEL PROFESORADO TÉCNICO    INSTITUTO NACIONAL SUPERIOR DEL PROFESORADO TÉCNICO    INSTITUTO NACIONAL SUPERIOR DEL PROFESORADO TÉCNICO    
+    
+ 
+Carrera: INFORMÁTICA APLICADA     Materia: SISTEMAS DE COMPUTACIÓN I     Docente: M. ING. DIEGO CORSI 
+ 
+ 
+ 
+ Construcción de un compilador de PL/0 para Win32: Pág. 4 
+    Finalmente, la generación de código es llevada a cabo por un módulo 
+que usualmente es reemplazable, con lo cual se pueden obtener códigos 
+objeto para distintas plataformas a partir de un mismo código intermedio. 
+Además, hoy en día es común que compiladores de distintos lenguajes 
+generen el mismo código intermedio, por lo que un programa ejecutable 
+puede obtenerse enlazando módulos de código objeto obtenidos a partir de 
+códigos fuente escritos en lenguajes distintos. 
+ 
+2. Estructura de los lenguajes 
+ 
+    Los lenguajes se basan en un vocabulario. Sus elementos son 
+comúnmente llamados palabras, pero en el estudio de los lenguajes 
+formales se los denomina símbolos. 
+    Es característico de los lenguajes que algunas secuencias de palabras 
+sean reconocidas como frases correctas y otras no. Lo que determina si 
+una secuencia de palabras es una frase correcta (o no) es la gramática, 
+sintaxis o estructura del lenguaje. De hecho, definimos sintaxis como el 
+conjunto de reglas que definen el conjunto de frases formalmente 
+correctas. 
+    Dado que la sintaxis provee a las frases de una estructura que nos 
+sirve para reconocerles el significado, queda claro que la sintaxis y la 
+semántica (el significado) están íntimamente conectados. Sin embargo, en 
+un primer momento vamos a dedicarnos exclusivamente al estudio de la 
+sintaxis. 
+    Tomemos la frase "Martín duerme." La palabra "Martín" es el sujeto y 
+la palabra "duerme" es el predicado. Esta frase pertenece a un lenguaje 
+que puede, por ejemplo, estar definido por la siguiente sintaxis: 
+    <frase> ::= <sujeto> <predicado> 
+    <sujeto> ::= Martín | Julieta 
+    <predicado> ::= duerme | juega 
+El significado de estas tres líneas es el siguiente: 
+    1. Una frase está formada por un sujeto seguido de un predicado. 
+    2. El sujeto puede ser la palabra "Martín" o la palabra "Julieta" 
+    3. El predicado puede ser la palabra "duerme" o la palabra "juega" 
+Las frases correctas pueden derivarse a partir del símbolo inicial 
+<frase> mediante la aplicación reiterada de reglas de sustitución. 
+ 
+ 
+ 
+UNIVERSIDAD TECNOLÓGICA NACIONAL    UNIVERSIDAD TECNOLÓGICA NACIONAL    UNIVERSIDAD TECNOLÓGICA NACIONAL    UNIVERSIDAD TECNOLÓGICA NACIONAL                            INSTITUTO NACIONAL SUPERIOR DEL PROFESORADO TÉCNICO    INSTITUTO NACIONAL SUPERIOR DEL PROFESORADO TÉCNICO    INSTITUTO NACIONAL SUPERIOR DEL PROFESORADO TÉCNICO    INSTITUTO NACIONAL SUPERIOR DEL PROFESORADO TÉCNICO    
+    
+ 
+Carrera: INFORMÁTICA APLICADA     Materia: SISTEMAS DE COMPUTACIÓN I     Docente: M. ING. DIEGO CORSI 
+ 
+ 
+ 
+ Construcción de un compilador de PL/0 para Win32: Pág. 5 
+    La notación utilizada para escribir estas reglas se denomina BNF. 
+    Las palabras Martín, Julieta, duerme y juega se denominan símbolos 
+terminales. Una secuencia nula de símbolos se representa con ∈∈∈∈. 
+    <frase>, <sujeto> y <predicado> son los símbolos no terminales. 
+Las reglas se denominan producciones, ya que determinan cómo se pueden 
+generar o producir frases correctas. 
+    Los símbolos  ::=  y  |  se denominan metasímbolos de la notación 
+BNF, y se pronuncian "puede sustituirse por" y "o", respectivamente. 
+Aunque no forman parte de BNF (ya que son una extensión del mismo), 
+también son consideradas metasímbolos las llaves {  y  } para encerrar 
+símbolos que se repiten cero o más veces. 
+    A veces, es posible simplificar la notación, utilizando letras 
+minúsculas para los símbolos terminales y letras mayúsculas para los 
+símbolos no terminales, en lugar de distinguirlos con < y >. 
+ 
+Ejemplo 1 
+             S ::= AB 
+             A ::= x|y 
+             B ::= z|w 
+ 
+    El lenguaje definido por esta sintaxis (que es equivalente a la 
+sintaxis dada en la página anterior) es el compuesto por las cuatro 
+frases xz, yz, xw, yw. 
+    A diferencia del lenguaje anterior, el definido por la siguiente 
+sintaxis está compuesto por un número infinito de frases: 
+ 
+Ejemplo 2 
+             S ::= xA 
+             A ::= z|yA 
+ 
+    A partir del símbolo inicial S pueden generarse las frases xz, xyz, 
+xyyz, xyyyz, xyyyyz, .... 
+    En síntesis, un lenguaje L se caracterizará con referencia a una 
+gramática G (T, N, P, S), donde: 
+    pppp T es el conjunto de símbolos terminales 
+    pppp N es el conjunto de símbolos no terminales 
+    pppp P es el conjunto de producciones 
+    pppp S es el símbolo inicial (debe ser un símbolo no terminal) 
+UNIVERSIDAD TECNOLÓGICA NACIONAL                            
+UNIVERSIDAD TECNOLÓGICA NACIONAL    
+INSTITUTO NACIONAL SUPERIOR DEL PROFESORADO TÉCNICO    
+INSTITUTO NACIONAL SUPERIOR DEL PROFESORADO TÉCNICO
+INSTITUTO NACIONAL SUPERIOR DEL PROFESORADO TÉCNICO
+INSTITUTO NACIONAL SUPERIOR DEL PROFESORADO TÉCNICO
+Carrera
+: INFORMÁTICA APLICADA     Materia
+: SISTEMAS DE COMPUTACIÓN I     Docente
+: M. ING. DIEGO CORSI 
+3. El lenguaje de programación PL/0
+Construcción de un compilador de PL/0 para Win32: Pág. 6 
+ 
+ 
+ 
+UNIVERSIDAD TECNOLÓGICA NACIONAL    UNIVERSIDAD TECNOLÓGICA NACIONAL    UNIVERSIDAD TECNOLÓGICA NACIONAL    UNIVERSIDAD TECNOLÓGICA NACIONAL                            INSTITUTO NACIONAL SUPERIOR DEL PROFESORADO TÉCNICO    INSTITUTO NACIONAL SUPERIOR DEL PROFESORADO TÉCNICO    INSTITUTO NACIONAL SUPERIOR DEL PROFESORADO TÉCNICO    INSTITUTO NACIONAL SUPERIOR DEL PROFESORADO TÉCNICO    
+    
+ 
+Carrera: INFORMÁTICA APLICADA     Materia: SISTEMAS DE COMPUTACIÓN I     Docente: M. ING. DIEGO CORSI 
+ 
+ 
+ 
+ Construcción de un compilador de PL/0 para Win32: Pág. 7 
+Ejemplo de programa escrito en PL/0 
+ 
+const M = 7, N = 85; 
+var X, Y, Z, Q, R; 
+ 
+procedure MULTIPLICAR; 
+var A, B; 
+begin 
+  A := X; 
+  B := Y; 
+  Z := 0; 
+  while B > 0 do 
+    begin 
+      if odd B then Z := Z + A; 
+      A := A * 2; 
+      B := B / 2 
+    end 
+end; 
+ 
+procedure DIVIDIR; 
+var W; 
+begin 
+  R := X; 
+  Q := 0; 
+  W := Y; 
+  while W <= R do W := W * 2; 
+  while W > Y do 
+    begin 
+      Q := Q * 2; 
+      W := W / 2; 
+      if W <= R then 
+        begin 
+          R := R - W; 
+          Q := Q + 1 
+        end 
+    end 
+end; 
+ 
+procedure MCD; 
+var F, G; 
+begin 
+  F := X; 
+  G := Y; 
+  while F <> G do 
+    begin 
+      if F < G then G := G - F; 
+      if G < F then F := F - G 
+    end; 
+  Z := F 
+end; 
+ 
+begin 
+  X := M;  Y := N;  call MULTIPLICAR; 
+  X := 25; Y := 3;  call DIVIDIR; 
+  X := 84; Y := 36; call MCD 
+end. 
+ 
+ 
+ 
+UNIVERSIDAD TECNOLÓGICA NACIONAL    UNIVERSIDAD TECNOLÓGICA NACIONAL    UNIVERSIDAD TECNOLÓGICA NACIONAL    UNIVERSIDAD TECNOLÓGICA NACIONAL                            INSTITUTO NACIONAL SUPERIOR DEL PROFESORADO TÉCNICO    INSTITUTO NACIONAL SUPERIOR DEL PROFESORADO TÉCNICO    INSTITUTO NACIONAL SUPERIOR DEL PROFESORADO TÉCNICO    INSTITUTO NACIONAL SUPERIOR DEL PROFESORADO TÉCNICO    
+    
+ 
+Carrera: INFORMÁTICA APLICADA     Materia: SISTEMAS DE COMPUTACIÓN I     Docente: M. ING. DIEGO CORSI 
+ 
+ 
+ 
+ Construcción de un compilador de PL/0 para Win32: Pág. 8 
+    Para describir el lenguaje PL/0 se utilizó una alternativa a la 
+notación BNF: los grafos de sintaxis. Ambas notaciones son equivalentes, 
+aunque los grafos dan una imagen más clara de la estructura del lenguaje 
+cuya sintaxis describen. 
+    Hay un grafo de sintaxis por cada producción. 
+    Los símbolos no terminales son representados mediante nombres 
+encerrados en rectángulos, con excepción del símbolo inicial, que 
+solamente aparece al comienzo de la primera producción. 
+    Los símbolos terminales son representados mediante nombres encerrados 
+en círculos o rectángulos con bordes redondeados, y pueden ser de dos 
+tipos: si el nombre está en mayúsculas representa una palabra reservada 
+del lenguaje, pero si está en minúsculas se trata del nombre de un grupo 
+de símbolos terminales, y no de un símbolo propiamente dicho, ya que 
+hacer una enumeración completa sería poco práctico (cuando no imposible). 
+ 
+    A pesar de su pequeño tamaño, PL/0 es relativamente completo. La 
+asignación es su proposición básica. Los conceptos fundamentales de la 
+programación estructurada (secuencia, condición y repetición) están 
+representados por las proposiciones begin/end, if y while. PL/0 incorpora 
+el concepto de subrutina mediante declaraciones de procedimientos y 
+proposiciones de llamadas a los mismos. Esto ofrece la oportunidad de 
+presentar el concepto de localidad de las constantes, las variables y los 
+procedimientos. 
+    Para reducir su complejidad, PL/0 sólo ofrece un tipo de datos: los 
+enteros (en este curso: enteros de 32 bits con signo). Es posible 
+declarar variables y constantes de este tipo. PL/0 dispone de los 
+operadores aritméticos y relacionales convencionales. 
+ 
+4. Análisis léxico 
+ 
+    La tarea del analizador léxico consiste en: 
+ a. Saltear los separadores (blancos, tabulaciones, comentarios). 
+ b. Reconocer los símbolos válidos e informar sobre los no válidos. 
+ c. Llevar la cuenta de los renglones del programa. 
+ d. Copiar los caracteres de entrada a la salida, generando un listado 
+    con los renglones numerados. 
+ 
+ 
+ 
+UNIVERSIDAD TECNOLÓGICA NACIONAL    UNIVERSIDAD TECNOLÓGICA NACIONAL    UNIVERSIDAD TECNOLÓGICA NACIONAL    UNIVERSIDAD TECNOLÓGICA NACIONAL                            INSTITUTO NACIONAL SUPERIOR DEL PROFESORADO TÉCNICO    INSTITUTO NACIONAL SUPERIOR DEL PROFESORADO TÉCNICO    INSTITUTO NACIONAL SUPERIOR DEL PROFESORADO TÉCNICO    INSTITUTO NACIONAL SUPERIOR DEL PROFESORADO TÉCNICO    
+    
+ 
+Carrera: INFORMÁTICA APLICADA     Materia: SISTEMAS DE COMPUTACIÓN I     Docente: M. ING. DIEGO CORSI 
+ 
+ 
+ 
+ Construcción de un compilador de PL/0 para Win32: Pág. 9 
+    El analizador léxico más simple es el de los lenguajes cuyos símbolos 
+están compuestos por un único carácter. Esto no es lo más frecuente en el 
+caso de los lenguajes de programación, donde las palabras reservadas, los 
+identificadores, los números y los operadores pueden estar compuestos por 
+más de un carácter. Para describir estos elementos, lo más conveniente es 
+utilizar gramáticas regulares, o sea, gramáticas G (T, N, P, S) en las 
+que cada producción P tiene la forma A ::= aB  o  A ::= a, y donde A y B 
+pertenecen a N y a pertenece a T. 
+    Es posible diseñar un autómata finito F para cada gramática regular 
+G. Este autómata F acepta las frases del lenguaje definido por G, es 
+decir, L (G) = L (F). 
+ 
+    A continuación, se presenta un diagrama de transición rudimentario 
+del autómata que reconoce los símbolos del lenguaje PL/0. 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+UNIVERSIDAD TECNOLÓGICA NACIONAL    UNIVERSIDAD TECNOLÓGICA NACIONAL    UNIVERSIDAD TECNOLÓGICA NACIONAL    UNIVERSIDAD TECNOLÓGICA NACIONAL                            INSTITUTO NACIONAL SUPERIOR DEL PROFESORADO TÉCNICO    INSTITUTO NACIONAL SUPERIOR DEL PROFESORADO TÉCNICO    INSTITUTO NACIONAL SUPERIOR DEL PROFESORADO TÉCNICO    INSTITUTO NACIONAL SUPERIOR DEL PROFESORADO TÉCNICO    
+    
+ 
+Carrera: INFORMÁTICA APLICADA     Materia: SISTEMAS DE COMPUTACIÓN I     Docente: M. ING. DIEGO CORSI 
+ 
+ 
+ 
+ Construcción de un compilador de PL/0 para Win32: Pág. 10
+    El analizador léxico que se desarrollará para este curso deberá ser 
+un procedimiento que tenga una forma similar a la siguiente (la forma, en 
+definitiva, dependerá del lenguaje utilizado para implementarlo): 
+ 
+type terminal = (nulo, _begin, _call, _const, .... , coma, pto, ....); 
+     archivo = file of char; 
+     str63 = string [63]; 
+ 
+procedure scanner (var Fuente, Listado: archivo; var S: terminal; var 
+Cad: str63; var Restante: string; var NumLinea: integer); 
+ 
+    Cada vez que se llame al procedimiento scanner y la cadena Restante 
+esté vacía o sólo contenga separadores, se leerá en Restante un nuevo 
+renglón del archivo Fuente y se lo escribirá en el archivo Listado, 
+anteponiéndole el valor actualizado de la variable NumLinea. Si, en 
+cambio, la variable Restante contuviera caracteres útiles para formar 
+símbolos, se los utilizará (borrándolos de Restante) para formar el 
+próximo símbolo terminal S y la cadena de caracteres Cad correspondiente. 
+    Por ejemplo, si el archivo Fuente contiene en sus dos primeros 
+renglones: 
+                 CONST A=2; 
+                 procedure RAIZ; 
+ 
+Estos serán los valores luego de cada llamada: 
+Llamada Listado S Cad Restante NumLinea 
+1 1: CONST A=2; _const 'CONST' ' A=2;' 1 
+2 1: CONST A=2; identificador 'A' '=2;' 1 
+3 1: CONST A=2; igual '=' '2;' 1 
+4 1: CONST A=2; numero '2' ';' 1 
+5 1: CONST A=2; ptoycoma ';' '' 1 
+6 1: CONST A=2; 
+2: procedure RAIZ; 
+_procedure 'PROCEDURE' ' RAIZ;' 2 
+7 1: CONST A=2; 
+2: procedure RAIZ; 
+identificador 'RAIZ' ';' 2 
+8 1: CONST A=2; 
+2: procedure RAIZ; 
+ptoycoma ';' '' 2 
+ 
+ 
+ 
+ 
+ 
+UNIVERSIDAD TECNOLÓGICA NACIONAL    UNIVERSIDAD TECNOLÓGICA NACIONAL    UNIVERSIDAD TECNOLÓGICA NACIONAL    UNIVERSIDAD TECNOLÓGICA NACIONAL                            INSTITUTO NACIONAL SUPERIOR DEL PROFESORADO TÉCNICO    INSTITUTO NACIONAL SUPERIOR DEL PROFESORADO TÉCNICO    INSTITUTO NACIONAL SUPERIOR DEL PROFESORADO TÉCNICO    INSTITUTO NACIONAL SUPERIOR DEL PROFESORADO TÉCNICO    
+    
+ 
+Carrera: INFORMÁTICA APLICADA     Materia: SISTEMAS DE COMPUTACIÓN I     Docente: M. ING. DIEGO CORSI 
+ 
+ 
+ 
+ Construcción de un compilador de PL/0 para Win32: Pág. 11
+5. Análisis sintáctico 
+ 
+    El proceso de determinar si una frase puede ser generada a partir de 
+un conjunto de producciones se denomina parsing. 
+    En el ejemplo 2, la frase xyyz se obtiene aplicando una vez S y tres 
+veces A (las dos primeras veces que se aplica A se elige la opción de la 
+derecha y la última vez la opción de la izquierda). Cuál producción se 
+aplica surge inmediatamente al leer la frase de a un símbolo, de 
+izquierda a derecha. 
+    Veamos ahora el siguiente caso: 
+ 
+Ejemplo 3 
+             S ::= A|B 
+             A ::= xA|y 
+             B ::= xB|z 
+ 
+    Determinar las producciones aplicadas para generar xxxxxxz sólo es 
+posible una vez que se leyó la frase completa, ya que habiendo leído sólo 
+la primera x no es posible saber si al aplicar S corresponde elegir A o 
+B. 
+ 
+    Otro caso problemático se muestra a continuación: 
+ 
+Ejemplo 4 
+             S ::= Ax 
+             A ::= x|∈∈∈∈ 
+ 
+    Para generar la frase x, sólo es posible saber si corresponde aplicar 
+la parte izquierda o la parte derecha de A una vez que A ya ha sido 
+aplicada (bien o mal) y aparece la x final de S. 
+    Las gramáticas que no presentan tales dificultades se denominan 
+LL(1). La primera "L" significa que la entrada será leída de izquierda a 
+derecha, y la segunda "L" indica derivaciones por la izquierda. El número 
+"1" significa que alcanza con leer por anticipado un símbolo en cualquier 
+paso del proceso de análisis sintáctico (o sea, solamente se emplea un 
+símbolo de preanálisis). Al sistema de grafos con que se representa una 
+gramática de este tipo se lo conoce como grafo de sintaxis 
+determinístico. 
+ 
+ 
+ 
+UNIVERSIDAD TECNOLÓGICA NACIONAL    UNIVERSIDAD TECNOLÓGICA NACIONAL    UNIVERSIDAD TECNOLÓGICA NACIONAL    UNIVERSIDAD TECNOLÓGICA NACIONAL                            INSTITUTO NACIONAL SUPERIOR DEL PROFESORADO TÉCNICO    INSTITUTO NACIONAL SUPERIOR DEL PROFESORADO TÉCNICO    INSTITUTO NACIONAL SUPERIOR DEL PROFESORADO TÉCNICO    INSTITUTO NACIONAL SUPERIOR DEL PROFESORADO TÉCNICO    
+    
+ 
+Carrera: INFORMÁTICA APLICADA     Materia: SISTEMAS DE COMPUTACIÓN I     Docente: M. ING. DIEGO CORSI 
+ 
+ 
+ 
+ Construcción de un compilador de PL/0 para Win32: Pág. 12
+    El paso siguiente consiste en construir un reconocedor sintáctico 
+(parser) para una sintaxis dada. Este tipo de programa se deriva 
+directamente del grafo de sintaxis determinístico y requiere de un 
+procedimiento que funcione como scanner, salvo que los símbolos del 
+lenguaje consten de un único carácter, en cuyo caso cualquier 
+procedimiento de entrada estándar servirá para el ingreso del siguiente 
+símbolo. 
+    Para escribir un reconocedor sintáctico a partir de un grafo de 
+sintaxis determinístico deberán seguirse las siguientes reglas: 
+ 
+R1. Reducir el sistema de grafos a la menor cantidad de grafos que sea 
+    posible, realizando para ello las sustituciones que sean 
+    necesarias. 
+ 
+R2. Declarar para cada grafo un procedimiento que contenga las 
+    sentencias resultantes de aplicarle al grafo las reglas R3 a R7. 
+ 
+R3. Una secuencia de elementos 
+ 
+                         ... 
+ 
+    se traduce como una sentencia compuesta: 
+ 
+    begin 
+      T(S1); T(S2); ... T(Sn) 
+    end 
+ 
+    (donde T(Si) es la sentencia obtenida al traducir el grafo Si) 
+ 
+R4. Una opción entre elementos 
+ 
+ 
+ 
+ 
+            .... 
+ 
+ 
+S1 S2 Sn 
+S1 
+S2 
+Sn 
+ 
+ 
+ 
+UNIVERSIDAD TECNOLÓGICA NACIONAL    UNIVERSIDAD TECNOLÓGICA NACIONAL    UNIVERSIDAD TECNOLÓGICA NACIONAL    UNIVERSIDAD TECNOLÓGICA NACIONAL                            INSTITUTO NACIONAL SUPERIOR DEL PROFESORADO TÉCNICO    INSTITUTO NACIONAL SUPERIOR DEL PROFESORADO TÉCNICO    INSTITUTO NACIONAL SUPERIOR DEL PROFESORADO TÉCNICO    INSTITUTO NACIONAL SUPERIOR DEL PROFESORADO TÉCNICO    
+    
+ 
+Carrera: INFORMÁTICA APLICADA     Materia: SISTEMAS DE COMPUTACIÓN I     Docente: M. ING. DIEGO CORSI 
+ 
+ 
+ 
+ Construcción de un compilador de PL/0 para Win32: Pág. 13
+    se traduce como una sentencia condicional: 
+ 
+    if SIM in L1 then T(S1) else 
+    if SIM in L2 then T(S2) else 
+    .... 
+    if SIM in Ln then T(Sn); 
+ 
+    donde SIM es el símbolo devuelto por el analizador léxico y Li es 
+    el conjunto de símbolos iniciales de Si. Siempre que Li conste de 
+    un único símbolo a, "SIM in Li" podrá expresarse como "SIM = a" 
+ 
+R5. Un bucle de la forma 
+ 
+ 
+ 
+ 
+    se traduce como la sentencia: 
+ 
+    while SIM in L do T(S) 
+ 
+R6. Una referencia a otro grafo A 
+ 
+ 
+ 
+    se traduce como una sentencia de llamada al procedimiento A 
+ 
+R7. Una referencia a un símbolo terminal x 
+ 
+ 
+ 
+    se traduce como la sentencia: 
+ 
+    if SIM = x then SCANNER(SIM) else ERROR 
+ 
+    donde ERROR es un procedimiento encargado del tratamiento de los 
+    errores. 
+ 
+    El parser funciona haciendo una llamada al scanner (para tener un 
+símbolo leído de antemano) y una llamada al procedimiento correspondiente 
+S 
+A 
+x 
+ 
+ 
+ 
+UNIVERSIDAD TECNOLÓGICA NACIONAL    UNIVERSIDAD TECNOLÓGICA NACIONAL    UNIVERSIDAD TECNOLÓGICA NACIONAL    UNIVERSIDAD TECNOLÓGICA NACIONAL                            INSTITUTO NACIONAL SUPERIOR DEL PROFESORADO TÉCNICO    INSTITUTO NACIONAL SUPERIOR DEL PROFESORADO TÉCNICO    INSTITUTO NACIONAL SUPERIOR DEL PROFESORADO TÉCNICO    INSTITUTO NACIONAL SUPERIOR DEL PROFESORADO TÉCNICO    
+    
+ 
+Carrera: INFORMÁTICA APLICADA     Materia: SISTEMAS DE COMPUTACIÓN I     Docente: M. ING. DIEGO CORSI 
+ 
+ 
+ 
+ Construcción de un compilador de PL/0 para Win32: Pág. 14
+al primero de los grafos. A partir de este procedimiento se irán 
+realizando llamadas a los demás, hasta que aparezca algún error o se 
+termine reconociendo satisfactoriamente el programa leído. 
+ 
+    Algunas construcciones redundantes pueden suprimirse al depurar el 
+parser resultante de la estricta aplicación de las reglas R1 a R7. 
+ 
+    Veamos ahora el siguiente caso: 
+ 
+Ejemplo 5 
+             A ::= x|(B) 
+             B ::= AC 
+             C ::= {+A} 
+ 
+    Aquí, los símbolos terminales son "x", "(", ")" y "+". Es posible 
+utilizar el procedimiento read para llevar a cabo la función del scanner, 
+ya que todos los símbolos están formados por un único carácter. Algunas 
+de las posibles frases del lenguaje son: 
+    x        (x)         (x+x)         ((x)) 
+ 
+    Los grafos equivalentes a la gramática expresada en BNF son: 
+ 
+ 
+    Aplicando la regla R1: 
+ 
+ 
+ 
+ 
+UNIVERSIDAD TECNOLÓGICA NACIONAL    UNIVERSIDAD TECNOLÓGICA NACIONAL    UNIVERSIDAD TECNOLÓGICA NACIONAL    UNIVERSIDAD TECNOLÓGICA NACIONAL                            INSTITUTO NACIONAL SUPERIOR DEL PROFESORADO TÉCNICO    INSTITUTO NACIONAL SUPERIOR DEL PROFESORADO TÉCNICO    INSTITUTO NACIONAL SUPERIOR DEL PROFESORADO TÉCNICO    INSTITUTO NACIONAL SUPERIOR DEL PROFESORADO TÉCNICO    
+    
+ 
+Carrera: INFORMÁTICA APLICADA     Materia: SISTEMAS DE COMPUTACIÓN I     Docente: M. ING. DIEGO CORSI 
+ 
+ 
+ 
+ Construcción de un compilador de PL/0 para Win32: Pág. 15
+ 
+    Aplicando las reglas R2 a R7: 
+ 
+program PARSER; 
+var SIM: char; 
+procedure A; 
+begin 
+  if SIM = 'x' 
+    then read (SIM) 
+    else if SIM = '(' 
+           then begin 
+                  read (SIM); 
+                  A; 
+                  while SIM = '+' do begin 
+                                       read (SIM); 
+                                       A 
+                                     end; 
+                  if SIM = ')' then read (SIM) 
+                               else ERROR 
+                end 
+           else ERROR 
+end; 
+begin 
+  read (SIM); 
+  A 
+end. 
+ 
+ 
+6. Análisis semántico 
+ 
+    El análisis sintáctico no garantiza que un programa esté libre de 
+errores. El siguiente programa escrito en PL/0 es sintácticamente 
+correcto, pero contiene un error semántico, ya que un identificador de 
+constante no puede ser llamado mediante la proposición call (que es 
+exclusiva para identificadores de procedimiento). 
+ 
+Ejemplo 6 
+             const K = 9; 
+             var V; 
+             procedure P; 
+               var X; 
+               begin 
+                 X := K * 2; 
+                 V := X 
+               end; 
+             call K. 
+ 
+ 
+    Para poder determinar si un programa es semánticamente correcto, el 
+compilador deberá cargar en una tabla cada identificador que se declare. 
+En esa tabla podrán consultarse: 
+ 
+ 
+ 
+UNIVERSIDAD TECNOLÓGICA NACIONAL    UNIVERSIDAD TECNOLÓGICA NACIONAL    UNIVERSIDAD TECNOLÓGICA NACIONAL    UNIVERSIDAD TECNOLÓGICA NACIONAL                            INSTITUTO NACIONAL SUPERIOR DEL PROFESORADO TÉCNICO    INSTITUTO NACIONAL SUPERIOR DEL PROFESORADO TÉCNICO    INSTITUTO NACIONAL SUPERIOR DEL PROFESORADO TÉCNICO    INSTITUTO NACIONAL SUPERIOR DEL PROFESORADO TÉCNICO    
+    
+ 
+Carrera: INFORMÁTICA APLICADA     Materia: SISTEMAS DE COMPUTACIÓN I     Docente: M. ING. DIEGO CORSI 
+ 
+ 
+ 
+ Construcción de un compilador de PL/0 para Win32: Pág. 16
+         - nombre del identificador 
+         - tipo de identificador 
+         - valor del identificador: Un número de 32 bits con distinto 
+           significado, según el tipo de identificador de que se 
+           trate: pppp constante: el valor de la constante 
+                  pppp variable: la dirección de memoria a que se refiere 
+                    la variable (sólo el desplazamiento) 
+                  pppp procedimiento: la dirección de memoria donde 
+                    comienza la proposición a ejecutar en el bloque 
+ 
+    Una posible definición del tipo con que se declarará la tabla podría 
+ser la siguiente: 
+ 
+     type TABLA = array [0..MaxIdent-1] of record 
+                                             NOM: str63; 
+                                             TIPO: terminal; 
+                                             VALOR: longInt 
+                                           end; 
+    El procedimiento BLOQUE recibirá como parámetro (pasaje por valor) la 
+entrada de la tabla a partir de la cual se podrán cargar identificadores. 
+Este parámetro podría llamarse BASE. Cuando se llama a BLOQUE desde el 
+grafo PROGRAMA, se le pasa como parámetro el valor 0, ya que no hay 
+identificadores previamente declarados. 
+    El procedimiento BLOQUE contendrá un variable local llamada 
+DESPLAZAMIENTO, que se irá incrementando con cada identificador que se 
+declare. Cuando se llama a BLOQUE desde el grafo BLOQUE, se le pasa como 
+parámetro el valor BASE+DESPLAZAMIENTO. 
+    De esta forma, cada vez que se declare un identificador, deberá 
+verificarse si éste ya había sido declarado en el mismo ámbito, es decir, 
+entre las posiciones de la tabla delimitadas por BASE y 
+BASE+DESPLAZAMIENTO-1. 
+    Para el análisis semántico, los identificadores se buscarán en toda 
+la tabla, comenzando en la posición BASE+DESPLAZAMIENTO-1 y retrocediendo 
+hasta la posición 0. De esta forma, siempre se encontrará primero el 
+identificador que haya sido declarado localmente. En caso de no 
+encontrarse el identificador, deberá darse aviso de la falta de 
+declaración. 
+UNIVERSIDAD TECNOLÓGICA NACIONAL                            
+UNIVERSIDAD TECNOLÓGICA NACIONAL    
+INSTITUTO NACIONAL SUPERIOR DEL PROFESORADO TÉCNICO    
+INSTITUTO NACIONAL SUPERIOR DEL PROFESORADO TÉCNICO
+INSTITUTO NACIONAL SUPERIOR DEL PROFESORADO TÉCNICO
+INSTITUTO NACIONAL SUPERIOR DEL PROFESORADO TÉCNICO
+Carrera
+: INFORMÁTICA APLICADA     Materia
+: SISTEMAS DE COMPUTACIÓN I     Docente
+: M. ING. DIEGO CORSI 
+Una vez hallado el identificador en la tabla, con el campo TIPO podrá 
+verificarse si el identificador es semánticamente correcto en la posición 
+del programa donde fue encontrado. 
+7. Generación de código
+Antes de comenzar con el estudio de la generación de código, 
+extenderemos la sintaxis de PL/0 mediante el agregado de tres 
+proposiciones de E/S, ya que de lo contrario no podríamos ingresar 
+valores en tiempo de ejecución ni podríamos ver los resultados de los 
+cálculos realizados por el programa. Adoptaremos los nombres de los 
+procedimientos de E/S de Pascal (readln, write y writeln), y les daremos 
+una funcionalidad similar a la que tienen en este lenguaje cuando se los 
+utiliza para realizar entrada desde el teclado y salida hacia la 
+pantalla. Además, incorporaremos un símbolo terminal nuevo, la cadena 
+literal, para permitir mostrar mensajes por pantalla. El analizador 
+léxico considerará que cualquier secuencia de caracteres encerrada entre 
+apóstrofos es una cadena. 
+La proposición de entrada READLN tendrá la sintaxis: 
+Las proposiciones de salida WRITELN y WRITE tendrán la sintaxis: 
+Construcción de un compilador de PL/0 para Win32: Pág. 17
+ 
+ 
+ 
+UNIVERSIDAD TECNOLÓGICA NACIONAL    UNIVERSIDAD TECNOLÓGICA NACIONAL    UNIVERSIDAD TECNOLÓGICA NACIONAL    UNIVERSIDAD TECNOLÓGICA NACIONAL                            INSTITUTO NACIONAL SUPERIOR DEL PROFESORADO TÉCNICO    INSTITUTO NACIONAL SUPERIOR DEL PROFESORADO TÉCNICO    INSTITUTO NACIONAL SUPERIOR DEL PROFESORADO TÉCNICO    INSTITUTO NACIONAL SUPERIOR DEL PROFESORADO TÉCNICO    
+    
+ 
+Carrera: INFORMÁTICA APLICADA     Materia: SISTEMAS DE COMPUTACIÓN I     Docente: M. ING. DIEGO CORSI 
+ 
+ 
+ 
+ Construcción de un compilador de PL/0 para Win32: Pág. 18
+    Finalmente, llegamos a la generación de código. Como plataforma de 
+destino de la compilación, en este curso se adoptará una PC con un 
+microprocesador que implemente IA-32 (Intel Architecture, 32-bit) y un 
+sistema operativo compatible con la API Win32. 
+ 
+    Utilizaremos (explícitamente) sólo 4 de los registros de 32 bits 
+disponibles: EDI, EAX, EBX y EDX. Eventualmente, también accederemos a la 
+parte baja de EAX, a través del subregistro AL (el cual permite acceder a 
+los 8 bits menos significativos de EAX). 
+ 
+    De los modos de direccionamiento soportados por el microprocesador, 
+solamente vamos a usar los siguientes tres: 
+ EJEMPLOS 
+modo registro ADD EAX, EBX             (carga EAX con el valor de la 
+suma de EAX más EBX) 
+modo inmediato MOV EAX, 00000072        (carga EAX con el valor 
+00000072) 
+modo indexado MOV EAX, [EDI+00000072]  (carga EAX con el contenido 
+de la dirección EDI+00000072) 
+ 
+    El archivo ejecutable generado por el compilador será de tipo PE 
+(Portable Executable). Este tipo es compatible con las versiones de 
+Windows actuales, ya que los ejecutables de tipo DOS COM (archivos COM), 
+DOS MZ (archivos EXE) y NE (New Executable) corresponden a aplicaciones 
+de 16 bits que no corren en las versiones de Windows de 64 bits. 
+ 
+    El código del programa estará compuesto por una parte de longitud 
+fija y una parte de longitud variable. 
+ 
+    La parte de longitud fija contendrá: 
+• un encabezado compatible con MS-DOS, caracterizado por el número 
+mágico 4D 5A (MZ), con instrucciones para avisar que la aplicación 
+no es compatible con ese sistema operativo; 
+• los encabezados COFF (Common Object File Format), con su número 
+mágico 50 45 00 00 (PE··) y OH (Optional Header), formados por 
+numerosos campos usados para cargar y ejecutar la aplicación; 
+• una tabla de encabezados de secciones con el encabezado de text. 
+• el comienzo de la sección text, formado por instrucciones del x86 
+mediante las que se implementan las proposiciones de E/S. Estas 
+instrucciones constituyen rutinas desde las cuales se realizarán 
+las llamadas a las funciones de la API de Windows. */
